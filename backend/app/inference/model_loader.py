@@ -1,7 +1,9 @@
 from pathlib import Path
-import sys
 
 import torch
+
+from .network import LLL_Net
+from .lopez17cnn import Lopez17CNN
 
 
 # ============================================================
@@ -9,17 +11,6 @@ import torch
 # ============================================================
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
-
-ORIGINAL_NIDS = PROJECT_ROOT / "original-nids"
-
-# Make the original research package importable:
-# original-nids/src/...
-if str(ORIGINAL_NIDS) not in sys.path:
-    sys.path.insert(0, str(ORIGINAL_NIDS))
-
-
-from src.networks.network import LLL_Net
-from src.networks.lopez17cnn import Lopez17CNN
 
 
 # ============================================================
@@ -91,8 +82,7 @@ class ModelLoader:
 
         if not checkpoints:
             raise FileNotFoundError(
-                f"No task1 checkpoint found in "
-                f"{model_dir}"
+                f"No task1 checkpoint found in {model_dir}"
             )
 
         return checkpoints[0]
@@ -103,12 +93,10 @@ class ModelLoader:
 
     def _load_model(self):
 
-        num_classes = (
-            self.config["num_classes"]
-        )
+        num_classes = self.config["num_classes"]
 
         # ----------------------------------------------------
-        # Base network
+        # Base Lopez17CNN
         # ----------------------------------------------------
 
         network = Lopez17CNN(
@@ -123,7 +111,8 @@ class ModelLoader:
         model = LLL_Net(network)
 
         # ----------------------------------------------------
-        # Task 0 = first 10 classes
+        # Task 0
+        # First 10 classes
         # ----------------------------------------------------
 
         model.add_head(
@@ -132,10 +121,13 @@ class ModelLoader:
         )
 
         # ----------------------------------------------------
-        # Task 1 = remaining classes
+        # Task 1
         #
-        # TON-IoT:      12 - 10 = 2
-        # Edge-IIoTset: 14 - 10 = 4
+        # TON-IoT:
+        #   10 + 2 = 12 classes
+        #
+        # Edge-IIoTset:
+        #   10 + 4 = 14 classes
         # ----------------------------------------------------
 
         model.add_head(
@@ -144,10 +136,9 @@ class ModelLoader:
         )
 
         # ----------------------------------------------------
-        # Load deployment checkpoint
+        # Load checkpoint
         #
-        # The checkpoint itself IS the state_dict.
-        # It does NOT contain a "state_dict" key.
+        # Checkpoint itself is the state_dict.
         # ----------------------------------------------------
 
         checkpoint_path = self._find_checkpoint()
@@ -174,8 +165,7 @@ class ModelLoader:
         # ----------------------------------------------------
 
         print(
-            f"[NIDS] Loaded "
-            f"{self.config['name']} checkpoint: "
+            f"[NIDS] Loaded {self.config['name']} checkpoint: "
             f"{checkpoint_path.name}"
         )
 
@@ -189,8 +179,7 @@ class ModelLoader:
 
         print(
             "[NIDS] Incremental heads: "
-            "10 + "
-            f"{num_classes - 10}"
+            f"10 + {num_classes - 10}"
         )
 
         return model
@@ -211,15 +200,11 @@ class ModelLoader:
         # (N, 1, 10, 4)
         # ----------------------------------------------------
 
-        x = torch.from_numpy(
-            x
-        ).float()
+        x = torch.from_numpy(x).float()
 
         x = x.unsqueeze(1)
 
-        x = x.to(
-            self.device
-        )
+        x = x.to(self.device)
 
         # ----------------------------------------------------
         # Forward pass
@@ -234,9 +219,6 @@ class ModelLoader:
 
         # ----------------------------------------------------
         # Combine incremental heads
-        #
-        # Task 0: 10 classes
-        # Task 1: remaining classes
         # ----------------------------------------------------
 
         logits = torch.cat(
