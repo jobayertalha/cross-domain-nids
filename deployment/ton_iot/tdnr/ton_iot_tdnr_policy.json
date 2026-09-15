@@ -1,0 +1,18 @@
+{
+    "method": "Target-Domain Neighborhood Refinement",
+    "abbreviation": "TDNR",
+    "source_domain": "IoT-NID",
+    "target_domain": "ToN-IoT",
+    "base_model": "BiC",
+    "network": "Lopez17CNN",
+    "confidence_threshold": 0.9,
+    "k": 5,
+    "agreement_threshold": 0.8,
+    "strength": 0.5,
+    "distance_metric": "cosine",
+    "reference_split": 0.8,
+    "reference_seed": 1,
+    "reference_samples": 14200,
+    "latent_dimension": 200,
+    "num_classes": 12
+}
